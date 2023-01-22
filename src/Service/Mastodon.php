@@ -48,6 +48,10 @@ class Mastodon
 
     public function getUserForSelectedServer(array $user): array
     {
+        if ($this->isAuthenticatedServer()) {
+            return $user;
+        }
+
         return $this->findUser($user['acct'])[0];
     }
 
@@ -55,6 +59,7 @@ class Mastodon
     {
         $medias = [];
         $page = $this->getServer() . '/api/v1/accounts/' . $userId . '/statuses?only_media=true';
+
         do {
             try {
                 $response = $this->httpClient->request(

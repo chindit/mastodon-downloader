@@ -44,7 +44,7 @@ class MastodonDownloadCommand extends Command
         try {
             $users = $this->mastodon->findUser($username);
         } catch (\Throwable $exception) {
-            $io->note('I\'m sorry but this error occured:');
+            $io->note('I\'m sorry but this error occurred:');
             $io->error($exception->getMessage());
 
             return Command::FAILURE;
