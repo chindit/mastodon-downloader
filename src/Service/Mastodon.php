@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class Mastodon
@@ -63,8 +64,13 @@ class Mastodon
                 );
 
                 $nextPage = [];
-                preg_match('/<(.*)>; rel="next"/', $response->getHeaders()['link'][0], $nextPage);
-                $page = count($nextPage) > 1 ? $nextPage[1] : null;
+
+                if (isset($response->getHeaders()['link'])) {
+                    preg_match('/<(.*)>; rel="next"/', $response->getHeaders()['link'][0], $nextPage);
+                    $page = count($nextPage) > 1 ? $nextPage[1] : null;
+                } else {
+                    $page = null;
+                }
 
                 $statuses = json_decode($response->getContent(), true, JSON_THROW_ON_ERROR);
 
@@ -73,12 +79,11 @@ class Mastodon
                         $medias[] = $media['remote_url'] ?: $media['url'];
                     }
                 }
-            } catch (HttpExceptionInterface $exception) {
-                if ($exception->getStatusCode() === Response::HTTP_TOO_MANY_REQUESTS) {
-                    dd($exception);
+            } catch (ClientExceptionInterface $exception) {
+                if ($exception->getCode() === Response::HTTP_TOO_MANY_REQUESTS) {
                     $io->warning('Account is locked due to excessive requests.');
-                    $io->note(sprintf('Program paused until %s', $response->getHeaders()['x-ratelimit-remaining'][0]));
-                    $reset = new Carbon($response->getHeaders()['x-ratelimit-remaining'][0]);
+                    $io->note(sprintf('Program paused until %s', $exception->getResponse()->getHeaders(false)['x-ratelimit-reset'][0]));
+                    $reset = new Carbon($exception->getResponse()->getHeaders(false)['x-ratelimit-reset'][0]);
                     sleep($reset->diffInSeconds(Carbon::now()) + 10);
                 }
             }
