@@ -54,6 +54,12 @@ class MastodonDownloadCommand extends Command
             }
         }
 
+        if ($selectedUser === null) {
+            $io->warning('Sorry but I couldn\'t find any user matching your request');
+
+            return Command::FAILURE;
+        }
+
         $directoryQuestion = new Question('In which directory do you want to store the medias ?');
         $directoryQuestion->setAutocompleterCallback(function (string $userInput): array {
             $inputPath = preg_replace('%(/|^)[^/]*$%', '$1', $userInput);
@@ -76,12 +82,6 @@ class MastodonDownloadCommand extends Command
         $targetDirectory = $directory . '/' . $selectedUser['username'];
         if(!is_dir($targetDirectory)) {
             mkdir($targetDirectory);
-        }
-
-        if ($selectedUser === null) {
-            $io->warning('Sorry but I couldn\'t find any user matching your request');
-
-            return Command::FAILURE;
         }
 
         $medias = $this->mastodon->getMedias($selectedUser['id'], $io);
