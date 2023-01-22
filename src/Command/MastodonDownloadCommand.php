@@ -7,7 +7,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -59,6 +58,11 @@ class MastodonDownloadCommand extends Command
 
             return Command::FAILURE;
         }
+
+        $this->mastodon->setServerForUser($selectedUser);
+        // UserId may be different between two servers, even if it's the same user
+        // In order to avoid a 404, we need to refresh userId on correct server
+        $selectedUser = $this->mastodon->getUserForSelectedServer($selectedUser);
 
         $directoryQuestion = new Question('In which directory do you want to store the medias ?');
         $directoryQuestion->setAutocompleterCallback(function (string $userInput): array {
