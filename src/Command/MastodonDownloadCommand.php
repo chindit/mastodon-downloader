@@ -7,6 +7,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -18,9 +19,14 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 )]
 class MastodonDownloadCommand extends Command
 {
-    public function __construct(private Mastodon $mastodon, private HttpClientInterface $httpClient)
+    public function __construct(private readonly Mastodon $mastodon, private readonly HttpClientInterface $httpClient)
     {
         parent::__construct();
+    }
+
+    protected function configure()
+    {
+        $this->addOption('directory', null, InputOption::VALUE_REQUIRED, 'Download directory');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -75,12 +81,17 @@ class MastodonDownloadCommand extends Command
                 return $inputPath.$dirOrFile;
             }, $foundFilesAndDirs);
         });
-        $directory = $io->askQuestion($directoryQuestion);
 
-        if (!is_writable($directory)) {
-            $io->error(sprintf('Sorry, directory %s is not writable', $directory));
+        if (!$input->getOption('directory') || !is_writable($input->getOption('directory'))) {
+            $directory = $io->askQuestion($directoryQuestion);
 
-            return Command::FAILURE;
+            if (!is_writable($directory)) {
+                $io->error(sprintf('Sorry, directory %s is not writable', $directory));
+
+                return Command::FAILURE;
+            }
+        } else {
+            $directory = $input->getOption('directory');
         }
 
         $targetDirectory = $directory . '/' . $selectedUser['username'];

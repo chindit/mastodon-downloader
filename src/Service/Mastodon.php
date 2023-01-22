@@ -12,7 +12,11 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class Mastodon
 {
     private ?string $userServer = null;
-    public function __construct(private string $server, private string $token, private HttpClientInterface $httpClient)
+    public function __construct(
+        private string $server,
+        private readonly string $token,
+        private readonly HttpClientInterface $httpClient
+    )
     {
         if (str_ends_with($this->server, '/')) {
             $this->server = substr('/', 0, -1);
