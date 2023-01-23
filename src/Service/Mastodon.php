@@ -52,7 +52,18 @@ class Mastodon
             return $user;
         }
 
-        return $this->findUser($user['acct'])[0];
+        try {
+            return $this->findUser($user['acct'])[0];
+        } catch (\Throwable $exception) {
+            /**
+             * Some servers have disabled their API.
+             * In this case, we use our root server
+             * We will lose some posts, but that's the best we can do
+             */
+            $this->userServer = null;
+
+            return $user;
+        }
     }
 
     public function getMedias(string $userId, SymfonyStyle $io): array
